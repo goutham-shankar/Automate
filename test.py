@@ -48,8 +48,13 @@ def run_fetch():
     ]
     
     csv_filename = "ONE_BY_ONE_FETCH_Export.csv"
-    from_date = date.today()
-    to_date = date.today()
+    
+    # Check for custom dates from environment variables (GitHub Actions inputs)
+    from_env = os.environ.get('NSE_FROM_DATE')
+    to_env = os.environ.get('NSE_TO_DATE')
+    
+    from_date = date.fromisoformat(from_env) if from_env else date.today()
+    to_date = date.fromisoformat(to_env) if to_env else date.today()
     
     with NSE(download_folder=Path(__file__).parent) as nse:
         # Automate target expiry if not manually set to a specific date
