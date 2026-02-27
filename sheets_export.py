@@ -5,7 +5,7 @@ from datetime import date
 import gspread
 from google.oauth2.service_account import Credentials
 
-def export_to_sheets(csv_file, spreadsheet_id):
+def export_to_sheets(csv_file, spreadsheet_id, custom_name=None):
     # 1. Authenticate
     # We expect the full JSON key content as a string in the environment variable
     creds_json = os.environ.get('GCP_SERVICE_ACCOUNT_KEY')
@@ -46,8 +46,11 @@ def export_to_sheets(csv_file, spreadsheet_id):
         print("[INFO] No data to export.")
         return
 
-    # 4. Create new Worksheet for today's date
-    sheet_name = date.today().strftime("%Y-%m-%d")
+    # 4. Create new Worksheet for the data date
+    if custom_name:
+        sheet_name = custom_name
+    else:
+        sheet_name = date.today().strftime("%Y-%m-%d")
     
     # Check if sheet already exists, delete if it does (or just append)
     # User requested "new data should be appended to a new work sheet"

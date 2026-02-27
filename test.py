@@ -144,7 +144,7 @@ def run_fetch():
         print("\n--- Starting Google Sheets Export ---")
         try:
             from sheets_export import export_to_sheets
-            export_to_sheets(csv_filename, sheet_id)
+            export_to_sheets(csv_filename, sheet_id, custom_name=str(from_date))
         except Exception as e:
             print(f"[ERROR] Sheets Export failed: {e}")
     else:
