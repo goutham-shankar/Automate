@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+
+# NSE Data & Cache
+*.pkl
+opt-expiry.json
+*.csv
+!ONE_BY_ONE_FETCH_Export.csv
+*.zip
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo

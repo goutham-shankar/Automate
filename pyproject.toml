@@ -1,0 +1,72 @@
+[build-system]
+build-backend = "hatchling.build"
+
+requires = [ "hatchling" ]
+
+[project]
+name = "nse"
+version = "2.0.0"
+description = "Unofficial Python Api for NSE India stock exchange"
+readme = "README.md"
+keywords = [ "nse", "nse-stock-data", "stock-market-api", "stock-news-api" ]
+authors = [
+  { name = "Benny Thadikaran" },
+]
+requires-python = ">=3.8"
+classifiers = [
+  "Intended Audience :: Developers",
+  "Intended Audience :: Financial and Insurance Industry",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Natural Language :: English",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Office/Business :: Financial :: Investment",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [ "mthrottle>=0.0.1" ]
+
+optional-dependencies.dev = [ "furo==2023.9.10", "sphinx==7.4.7" ]
+optional-dependencies.local = [ "requests>=2.31" ]
+optional-dependencies.server = [ "httpx[http2]==0.28.1" ]
+urls."Bug Tracker" = "https://github.com/BennyThadikaran/NseIndiaApi/issues"
+urls."Homepage" = "https://github.com/BennyThadikaran/NseIndiaApi"
+
+[tool.hatch.build.targets.sdist]
+exclude = [ "docs", "tests", ".github", "src/samples" ]
+
+[tool.hatch.build.targets.wheel]
+exclude = [ "docs", "tests", ".github", "src/samples" ]
+
+[tool.ruff]
+target-version = "py38"
+
+format.indent-style = "space"
+format.quote-style = "double"
+format.line-ending = "auto"
+format.skip-magic-trailing-comma = false
+lint.select = [
+  "B",   # flake8-bugbear (likely bugs)
+  "D",   # pydocstyle (PEP 257)
+  "E",   # pycodestyle errors (PEP 8)
+  "F",   # pyflakes (unused imports, undefined names)
+  "I",   # isort (import sorting)
+  "N",   # pep8-naming (snake_case, PascalCase)
+  "SIM", # flake8-simplify
+  "UP",  # pyupgrade (modern Python)
+  "W",   # pycodestyle warnings
+]
+lint.ignore = [
+  "D100", # missing docstring in public module
+  "D104", # missing docstring in public package
+  "D203", # incompatible with D211
+  "D213", # incompatible with D212
+]
+lint.pydocstyle.convention = "pep257"
