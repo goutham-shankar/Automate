@@ -3,6 +3,7 @@ from pathlib import Path
 from datetime import date
 import csv
 import time
+import os
 
 # Add src to sys.path
 sys.path.append(str(Path(__file__).parent / "src"))
@@ -131,6 +132,18 @@ def run_fetch():
                 # time.sleep(0.1)
 
     print(f"\n--- Fetch Complete. Data saved to {csv_filename} ---")
+    
+    # Trigger Google Sheets export if GOOGLE_SHEET_ID is set
+    sheet_id = os.environ.get('GOOGLE_SHEET_ID')
+    if sheet_id:
+        print("\n--- Starting Google Sheets Export ---")
+        try:
+            from sheets_export import export_to_sheets
+            export_to_sheets(csv_filename, sheet_id)
+        except Exception as e:
+            print(f"[ERROR] Sheets Export failed: {e}")
+    else:
+        print("\n[INFO] GOOGLE_SHEET_ID not set. Skipping Sheets export.")
 
 if __name__ == "__main__":
     run_fetch()

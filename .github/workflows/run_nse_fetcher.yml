@@ -21,10 +21,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # NSE API usually requires requests, httpx, and mthrottle
-          pip install requests httpx mthrottle
+          # NSE API and Google Sheets dependencies
+          pip install requests httpx mthrottle gspread google-auth
 
       - name: Run NSE Fetcher
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
         run: python test.py
 
       - name: Commit and push changes
