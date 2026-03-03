@@ -83,29 +83,50 @@ class LTPTracker:
         with open(self.data_file, 'w') as f:
             json.dump(self.today_data, f, indent=2)
     
-    def load_previous_ltp_from_csv(self):
-        """Load most recent LTP per symbol from cumulative CSV."""
+    def load_previous_ltp_from_csv(self, exclude_after_time=None):
+        """Load most recent LTP per symbol from cumulative CSV, optionally excluding recent times."""
         if not Path(self.csv_file).exists():
+            print("[INFO] No previous CSV data found - first run")
             return {}, None
         
-        previous_ltp = {}
-        last_time = None
-        
+        # Read all rows and group by time to get the most recent COMPLETE run
+        time_groups = {}
         with open(self.csv_file, 'r', newline='') as f:
             reader = csv.DictReader(f)
             for row in reader:
+                time_str = row.get('time')
                 symbol = row.get('symbol')
                 ltp_str = row.get('ltp')
-                time_str = row.get('time')
                 
-                if symbol and ltp_str:
+                if time_str and symbol and ltp_str:
                     try:
-                        previous_ltp[symbol] = float(ltp_str)
-                        last_time = time_str
+                        ltp_val = float(ltp_str)
+                        if time_str not in time_groups:
+                            time_groups[time_str] = {}
+                        time_groups[time_str][symbol] = ltp_val
                     except ValueError:
                         continue
         
-        return previous_ltp, last_time
+        if not time_groups:
+            print("[INFO] No valid previous data in CSV")
+            return {}, None
+        
+        # Get the most recent time (excluding current if specified)
+        sorted_times = sorted(time_groups.keys(), reverse=True)
+        prev_time = None
+        prev_data = {}
+        
+        for t in sorted_times:
+            if exclude_after_time and t >= exclude_after_time:
+                continue
+            prev_time = t
+            prev_data = time_groups[t]
+            break
+        
+        if prev_data:
+            print(f"[INFO] Loaded previous data from {prev_time} ({len(prev_data)} symbols)")
+        
+        return prev_data, prev_time
     
     def fetch_ltp_for_stocks(self):
         """Fetch current LTP for all stocks"""
@@ -164,9 +185,11 @@ class LTPTracker:
         prev_time = previous_run_times[-1] if previous_run_times else None
         prev_data = self.today_data.get(prev_time, {}).get('stocks', {}) if prev_time else {}
         
-        # If no same-day previous data, load from cumulative CSV
+        # If no same-day previous data, load from cumulative CSV (excluding current time)
         if not prev_data:
-            prev_data, prev_time = self.load_previous_ltp_from_csv()
+            prev_data, prev_time = self.load_previous_ltp_from_csv(exclude_after_time=current_time)
+        else:
+            print(f"[INFO] Using same-day previous run from {prev_time}")
         
         for symbol in FNO_WATCHLIST:
             if symbol not in ltp_data:
