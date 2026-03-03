@@ -53,6 +53,9 @@ class LTPTracker:
         self.csv_file = "ltp_tracker_results.csv"
         self.fno_cache_file = "ltp_fno_symbols.json"
         self.today_data = self.load_today_data()
+        self.is_ci = os.environ.get("GITHUB_ACTIONS", "").lower() == "true"
+        self.max_symbols = int(os.environ.get("LTP_MAX_SYMBOLS", "0") or 0)
+        self.request_timeout = int(os.environ.get("NSE_TIMEOUT_SECONDS", "15") or 15)
 
     def get_fno_symbols(self, nse):
         """Return FnO symbols from WATCHLIST using daily cache."""
@@ -67,7 +70,7 @@ class LTPTracker:
             pass
 
         fno_symbols = []
-        for symbol in WATCHLIST:
+        for i, symbol in enumerate(WATCHLIST, start=1):
             try:
                 meta = nse.equityMetaInfo(symbol)
                 if meta.get("isFNOSec"):
@@ -75,8 +78,15 @@ class LTPTracker:
             except Exception:
                 continue
 
+            if self.is_ci and i % 20 == 0:
+                print(f"[CI] Checked FnO eligibility: {i}/{len(WATCHLIST)}", flush=True)
+
         with open(self.fno_cache_file, "w") as f:
             json.dump({"date": cache_today, "symbols": fno_symbols}, f, indent=2)
+
+        if self.max_symbols > 0:
+            fno_symbols = fno_symbols[: self.max_symbols]
+            print(f"[INFO] LTP_MAX_SYMBOLS applied: {len(fno_symbols)} symbols", flush=True)
 
         return fno_symbols
         
@@ -99,13 +109,15 @@ class LTPTracker:
         ltp_data = {}
         current_time = datetime.now().strftime("%H:%M")
         
-        print(f"\n{'='*80}")
-        print(f"Fetching LTP at {current_time} ({datetime.now().strftime('%I:%M %p')})")
-        print(f"{'='*80}")
+        print(f"\n{'='*80}", flush=True)
+        print(f"Fetching LTP at {current_time} ({datetime.now().strftime('%I:%M %p')})", flush=True)
+        print(f"{'='*80}", flush=True)
         
-        with NSE(download_folder=Path(__file__).parent) as nse:
+        with NSE(download_folder=Path(__file__).parent, timeout=self.request_timeout) as nse:
             fno_watchlist = self.get_fno_symbols(nse)
-            print(f"FnO symbols in watchlist: {len(fno_watchlist)}")
+            if self.max_symbols > 0:
+                fno_watchlist = fno_watchlist[: self.max_symbols]
+            print(f"FnO symbols in watchlist: {len(fno_watchlist)}", flush=True)
 
             for i, symbol in enumerate(fno_watchlist):
                 try:
@@ -115,11 +127,15 @@ class LTPTracker:
                         raise ValueError("Missing lastPrice in quote response")
                     ltp = float(str(ltp_raw).replace(",", ""))
                     ltp_data[symbol] = ltp
-                    print(f"[{i+1}/{len(fno_watchlist)}] {symbol}: {ltp}", end="\r")
+                    if self.is_ci:
+                        if (i + 1) % 10 == 0 or (i + 1) == len(fno_watchlist):
+                            print(f"[CI] Fetched LTP: {i+1}/{len(fno_watchlist)}", flush=True)
+                    else:
+                        print(f"[{i+1}/{len(fno_watchlist)}] {symbol}: {ltp}", end="\r")
                 except Exception as e:
-                    print(f"\n[SKIP] {symbol}: {e}")
+                    print(f"\n[SKIP] {symbol}: {e}", flush=True)
         
-        print(f"\n[OK] Fetched {len(ltp_data)} stocks")
+        print(f"\n[OK] Fetched {len(ltp_data)} stocks", flush=True)
         return ltp_data, current_time
     
     def process_and_display(self, ltp_data, current_time):

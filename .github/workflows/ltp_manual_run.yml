@@ -10,10 +10,16 @@ on:
         type: choice
         options:
           - run
+      max_symbols:
+        description: "Optional: limit symbols for quick test (0 = all)"
+        required: false
+        default: "0"
+        type: string
 
 jobs:
   ltp-run:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -31,7 +37,10 @@ jobs:
 
       - name: Run LTP tracker
         env:
+          PYTHONUNBUFFERED: "1"
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          LTP_MAX_SYMBOLS: ${{ github.event.inputs.max_symbols }}
+          NSE_TIMEOUT_SECONDS: "12"
         run: |
           python ltp_tracker.py ${{ github.event.inputs.run_mode }}
