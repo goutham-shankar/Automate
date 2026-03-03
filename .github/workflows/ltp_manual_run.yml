@@ -1,0 +1,37 @@
+name: LTP Manual Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_mode:
+        description: "Run mode"
+        required: true
+        default: "run"
+        type: choice
+        options:
+          - run
+
+jobs:
+  ltp-run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests mthrottle gspread google-auth
+
+      - name: Run LTP tracker
+        env:
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+        run: |
+          python ltp_tracker.py ${{ github.event.inputs.run_mode }}
