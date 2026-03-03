@@ -13,9 +13,20 @@ opt-expiry.json
 *.csv
 !ONE_BY_ONE_FETCH_Export.csv
 *.zip
+ltp_tracker_data.json
+ltp_fno_symbols.json
+ltp_cron.log
+
+# Local secrets
+.env
+.env.*
+!.env.example
 
 # IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
+
+# OS metadata
+.DS_Store
