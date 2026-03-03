@@ -137,7 +137,7 @@ class LTPTracker:
         
         print(f"\n[OK] Fetched {len(ltp_data)} stocks", flush=True)
         return ltp_data, current_time
-    
+
     def process_and_display(self, ltp_data, current_time):
         """Process LTP data and display comparison"""
         timestamp = datetime.now().isoformat()
@@ -157,50 +157,51 @@ class LTPTracker:
         print(f"{'-'*100}")
         
         results = []
+        previous_run_times = [t for t in sorted(self.today_data.keys()) if t < current_time]
+        prev_time = previous_run_times[-1] if previous_run_times else None
+        prev_data = self.today_data.get(prev_time, {}).get('stocks', {}) if prev_time else {}
         
         for symbol in WATCHLIST:
             if symbol not in ltp_data:
                 continue
             
             current_ltp = ltp_data[symbol]
+            change = None
+            change_pct = None
             
             # Build comparison info
             comparison_info = f"{symbol} {current_ltp}"
             
             # Find previous runs and calculate changes
-            previous_run_times = [t for t in sorted(self.today_data.keys()) if t < current_time]
-            
-            if previous_run_times:
-                prev_time = previous_run_times[-1]
-                prev_data = self.today_data[prev_time]['stocks']
-                
-                if symbol in prev_data:
-                    prev_ltp = prev_data[symbol]
-                    change = current_ltp - prev_ltp
-                    change_pct = (change / prev_ltp * 100) if prev_ltp != 0 else 0
-                    
-                    comparison_info += f" | Prev ({prev_time}): {prev_ltp}"
-                    comparison_info += f" | Change: {change:+.2f} ({change_pct:+.2f}%)"
+            if prev_time and symbol in prev_data:
+                prev_ltp = prev_data[symbol]
+                change = current_ltp - prev_ltp
+                change_pct = (change / prev_ltp * 100) if prev_ltp != 0 else 0
+
+                comparison_info += f" | Change vs {prev_time}: {change:+.2f} ({change_pct:+.2f}%)"
                     
                     # Find first run of the day
-                    first_run_times = sorted(self.today_data.keys())
-                    if first_run_times:
-                        first_time = first_run_times[0]
-                        first_data = self.today_data[first_time]['stocks']
-                        
-                        if symbol in first_data and first_time != current_time:
-                            first_ltp = first_data[symbol]
-                            total_change = current_ltp - first_ltp
-                            total_change_pct = (total_change / first_ltp * 100) if first_ltp != 0 else 0
-                            
-                            comparison_info += f" | Total from {first_time}: {total_change:+.2f} ({total_change_pct:+.2f}%)"
+                first_run_times = sorted(self.today_data.keys())
+                if first_run_times:
+                    first_time = first_run_times[0]
+                    first_data = self.today_data[first_time]['stocks']
+
+                    if symbol in first_data and first_time != current_time:
+                        first_ltp = first_data[symbol]
+                        total_change = current_ltp - first_ltp
+                        total_change_pct = (total_change / first_ltp * 100) if first_ltp != 0 else 0
+
+                        comparison_info += f" | Total from {first_time}: {total_change:+.2f} ({total_change_pct:+.2f}%)"
             
             print(comparison_info)
             results.append({
                 'time': current_time,
                 'symbol': symbol,
                 'ltp': current_ltp,
-                'timestamp': timestamp
+                'timestamp': timestamp,
+                'previous_time': prev_time or "",
+                'change': "" if change is None else round(change, 4),
+                'change_pct': "" if change_pct is None else round(change_pct, 4)
             })
         
         # Save to CSV
@@ -213,7 +214,7 @@ class LTPTracker:
         """Save only current run data to a dedicated CSV file."""
         run_file = f"LTP_RUN_{date.today().strftime('%Y%m%d')}_{run_label.replace(':', '')}.csv"
         with open(run_file, 'w', newline='') as f:
-            fieldnames = ['timestamp', 'time', 'symbol', 'ltp']
+            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'change', 'change_pct']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for row in results:
@@ -242,7 +243,7 @@ class LTPTracker:
         file_exists = Path(self.csv_file).exists()
         
         with open(self.csv_file, 'a', newline='') as f:
-            fieldnames = ['timestamp', 'time', 'symbol', 'ltp']
+            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'change', 'change_pct']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             
             if not file_exists:

@@ -5,6 +5,79 @@ from datetime import date
 import gspread
 from google.oauth2.service_account import Credentials
 
+
+def _to_float(value):
+    try:
+        if value is None:
+            return None
+        value_str = str(value).strip()
+        if value_str == "":
+            return None
+        return float(value_str)
+    except Exception:
+        return None
+
+
+def apply_gainer_loser_colors(worksheet, data):
+    """Color rows green for gainers and red for losers using change/ltp_change column."""
+    if len(data) <= 1:
+        return
+
+    headers = [str(h).strip().lower() for h in data[0]]
+    col_name = None
+    for candidate in ("change", "ltp_change"):
+        if candidate in headers:
+            col_name = candidate
+            break
+
+    if not col_name:
+        print("[INFO] No change column found. Skipping gainer/loser colors.")
+        return
+
+    change_col_index = headers.index(col_name)
+    total_cols = len(data[0])
+    requests = []
+
+    for row_idx, row in enumerate(data[1:], start=1):
+        if change_col_index >= len(row):
+            continue
+
+        change_value = _to_float(row[change_col_index])
+        if change_value is None or change_value == 0:
+            continue
+
+        if change_value > 0:
+            bg = {"red": 0.90, "green": 0.98, "blue": 0.90}
+            fg = {"red": 0.10, "green": 0.50, "blue": 0.10}
+        else:
+            bg = {"red": 0.99, "green": 0.90, "blue": 0.90}
+            fg = {"red": 0.65, "green": 0.10, "blue": 0.10}
+
+        requests.append({
+            "repeatCell": {
+                "range": {
+                    "sheetId": worksheet.id,
+                    "startRowIndex": row_idx,
+                    "endRowIndex": row_idx + 1,
+                    "startColumnIndex": 0,
+                    "endColumnIndex": total_cols,
+                },
+                "cell": {
+                    "userEnteredFormat": {
+                        "backgroundColor": bg,
+                        "textFormat": {"foregroundColor": fg, "bold": True}
+                    }
+                },
+                "fields": "userEnteredFormat(backgroundColor,textFormat.foregroundColor,textFormat.bold)",
+            }
+        })
+
+    if requests:
+        worksheet.spreadsheet.batch_update({"requests": requests})
+        print(f"[SUCCESS] Applied gainer/loser colors to {len(requests)} rows.")
+    else:
+        print("[INFO] No positive/negative changes found to color.")
+
 def export_to_sheets(csv_file, spreadsheet_id, custom_name=None):
     # 1. Authenticate
     # We expect the full JSON key content as a string in the environment variable
@@ -65,6 +138,7 @@ def export_to_sheets(csv_file, spreadsheet_id, custom_name=None):
     # 5. Upload data
     try:
         worksheet.update('A1', data)
+        apply_gainer_loser_colors(worksheet, data)
         print(f"[SUCCESS] Exported {len(data)-1} rows to worksheet '{sheet_name}'.")
     except Exception as e:
         print(f"[ERROR] Failed to upload data: {e}")

@@ -1,6 +1,14 @@
-name: LTP Manual Run
+name: LTP Tracker
 
 on:
+  schedule:
+    # IST times converted to UTC (IST = UTC+5:30)
+    - cron: '30 3 * * 1-5'   # 9:00 AM IST (Mon-Fri)
+    - cron: '30 4 * * 1-5'   # 10:00 AM IST (Mon-Fri)
+    - cron: '30 7 * * 1-5'   # 1:00 PM IST (Mon-Fri)
+    - cron: '30 8 * * 1-5'   # 2:00 PM IST (Mon-Fri)
+    - cron: '30 9 * * 1-5'   # 3:00 PM IST (Mon-Fri)
+    - cron: '0 10 * * 1-5'   # 3:30 PM IST (Mon-Fri)
   workflow_dispatch:
     inputs:
       run_mode:
@@ -40,7 +48,7 @@ jobs:
           PYTHONUNBUFFERED: "1"
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
-          LTP_MAX_SYMBOLS: ${{ github.event.inputs.max_symbols }}
+          LTP_MAX_SYMBOLS: ${{ github.event.inputs.max_symbols || '0' }}
           NSE_TIMEOUT_SECONDS: "12"
         run: |
-          python ltp_tracker.py ${{ github.event.inputs.run_mode }}
+          python ltp_tracker.py ${{ github.event.inputs.run_mode || 'run' }}
