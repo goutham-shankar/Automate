@@ -83,10 +83,75 @@ class LTPTracker:
         with open(self.data_file, 'w') as f:
             json.dump(self.today_data, f, indent=2)
     
+    def load_previous_ltp_from_sheets(self, current_time):
+        """Load previous run data from prior Google Sheets tab (for CI persistence)."""
+        sheet_id = os.environ.get('GOOGLE_SHEET_ID')
+        creds_json = os.environ.get('GCP_SERVICE_ACCOUNT_KEY')
+        
+        if not sheet_id or not creds_json:
+            return {}, None
+        
+        try:
+            import gspread
+            from google.oauth2.service_account import Credentials
+            
+            scopes = [
+                "https://www.googleapis.com/auth/spreadsheets",
+                "https://www.googleapis.com/auth/drive"
+            ]
+            creds_dict = json.loads(creds_json)
+            credentials = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+            client = gspread.authorize(credentials)
+            spreadsheet = client.open_by_key(sheet_id)
+            
+            # Find previous sheet: date format is YYYY-MM-DD_HHMM
+            date_part = date.today().isoformat()
+            current_sheet_name = f"{date_part}_{current_time.replace(':', '-')}"
+            
+            # Get all worksheets and filter by today's date
+            all_sheets = [ws.title for ws in spreadsheet.worksheets()]
+            today_sheets = [s for s in all_sheets if s.startswith(date_part)]
+            today_sheets.sort()
+            
+            # Find the sheet before current
+            prev_sheet_name = None
+            for sheet_name in reversed(today_sheets):
+                if sheet_name < current_sheet_name:
+                    prev_sheet_name = sheet_name
+                    break
+            
+            if not prev_sheet_name:
+                print("[INFO] No previous sheet found today")
+                return {}, None
+            
+            # Read data from previous sheet
+            worksheet = spreadsheet.worksheet(prev_sheet_name)
+            records = worksheet.get_all_records()
+            
+            prev_data = {}
+            for row in records:
+                symbol = row.get('symbol')
+                ltp = row.get('ltp')
+                if symbol and ltp:
+                    try:
+                        prev_data[symbol] = float(ltp)
+                    except (ValueError, TypeError):
+                        continue
+            
+            # Extract time from sheet name (YYYY-MM-DD_HH-MM format)
+            prev_time = prev_sheet_name.split('_')[1].replace('-', ':')
+            
+            print(f"[INFO] Loaded {len(prev_data)} symbols from sheet '{prev_sheet_name}'")
+            return prev_data, prev_time
+            
+        except Exception as e:
+            print(f"[WARNING] Could not load from Sheets: {e}")
+            return {}, None
+    
     def load_previous_ltp_from_csv(self, exclude_after_time=None):
-        """Load most recent LTP per symbol from cumulative CSV, optionally excluding recent times."""
+        """Load most recent LTP per symbol from cumulative CSV (fallback for local runs)."""
         if not Path(self.csv_file).exists():
-            print("[INFO] No previous CSV data found - first run")
+            print("[INFO] No previous CSV data found")
             return {}, None
         
         # Read all rows and group by time to get the most recent COMPLETE run
@@ -124,7 +189,7 @@ class LTPTracker:
             break
         
         if prev_data:
-            print(f"[INFO] Loaded previous data from {prev_time} ({len(prev_data)} symbols)")
+            print(f"[INFO] Loaded {len(prev_data)} symbols from CSV time {prev_time}")
         
         return prev_data, prev_time
     
@@ -185,11 +250,15 @@ class LTPTracker:
         prev_time = previous_run_times[-1] if previous_run_times else None
         prev_data = self.today_data.get(prev_time, {}).get('stocks', {}) if prev_time else {}
         
-        # If no same-day previous data, load from cumulative CSV (excluding current time)
+        # If no same-day in-memory data, try loading from Google Sheets (for CI) then CSV (for local)
         if not prev_data:
-            prev_data, prev_time = self.load_previous_ltp_from_csv(exclude_after_time=current_time)
+            print("[INFO] No in-memory previous run, checking external sources...")
+            prev_data, prev_time = self.load_previous_ltp_from_sheets(current_time)
+            
+            if not prev_data:
+                prev_data, prev_time = self.load_previous_ltp_from_csv(exclude_after_time=current_time)
         else:
-            print(f"[INFO] Using same-day previous run from {prev_time}")
+            print(f"[INFO] Using in-memory previous run from {prev_time}")
         
         for symbol in FNO_WATCHLIST:
             if symbol not in ltp_data:
