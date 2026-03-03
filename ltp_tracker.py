@@ -9,28 +9,29 @@ import os
 sys.path.append(str(Path(__file__).parent / "src"))
 from nse import NSE
 
-# Stock watchlist
-WATCHLIST = [
+# FnO-eligible stock watchlist (static, verified as of March 2026)
+# Update this list manually if FnO eligibility changes
+FNO_WATCHLIST = [
     "360ONE", "ABB", "ABBOTINDIA", "ABCAPITAL", "ABFRL", "ALKEM", "AMBER",
     "ANGELONE", "APLAPOLLO", "APOLLOHOSP", "APOLLOTYRE", "ASHOKLEY",
     "ASTRAL", "ATGL", "AUBANK", "AUROPHARMA", "BAJAJ-AUTO", "BAJAJFINSV",
     "BAJAJHLDNG", "BAJFINANCE", "BALKRISIND", "BALRAMCHIN", "BANDHANBNK",
     "BANKBARODA", "BANKINDIA", "BDL", "BERGEPAINT", "BHARATFORG",
     "BHARTIARTL", "BIOCON", "BLUESTARCO", "BOSCHLTD", "BPCL", "BRITANNIA",
-    "BSE", "CAMS", "CANBK", "CANFINHOME", "CASGP", "CDSL", "CESC",
+    "BSE", "CAMS", "CANBK", "CANFINHOME", "CDSL", "CESC",
     "CGPOWER", "CHAMBLFERT", "CHOLAFIN", "CIPLA", "COALINDIA", "COFORGE",
     "COLPAL", "CONCOR", "COROMANDEL", "CROMPTON", "CUMMINSIND", "DABUR",
     "DALBHARAT", "DEEPAKNTR", "DELHIVERY", "DIVISLAB", "DIXON", "DLF",
-    "DMART", "DRREDDY", "EICHERMOT", "ESCORTS", "EXIDEIND", "FEDERALBNK",
-    "FORTIS", "GAIL", "GLAN", "GLENMARK", "GMRINFRA", "GODREJCP",
+    "DMART", "DRREDDY", "EICHERMOT", "ESCORTS", "ETERNAL", "EXIDEIND",
+    "FEDERALBNK", "FORTIS", "GAIL", "GLENMARK", "GODREJCP",
     "GODREJPROP", "GRASIM", "GUJGASLTD", "HAL", "HAVELLS", "HCLTECH",
     "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDCOPPER", "HINDPETRO",
     "HINDUNILVR", "HINDZINC", "HUDCO", "ICICIGI", "ICICIPRULI", "IDFC",
     "IDFCFIRSTB", "IEX", "IGL", "IIFL", "INDHOTEL", "INDIACEM", "INDIAMART",
     "INDIGO", "INDUSINDBK", "INDUSTOWER", "INOXWIND", "IOC", "IPCALAB",
     "IREDA", "IRFC", "JINDALSTEL", "JIOFIN", "JKCEMENT", "JSWENERGY",
-    "JSWSTEEL", "JUBLFOOD", "KAYNES", "KEE", "KFINTECH", "L&TFH",
-    "LALPATHLAB", "LICHSGFIN", "LICI", "LODHA", "LT", "LTIM", "LTTS",
+    "JSWSTEEL", "JUBLFOOD", "KAYNES", "KFINTECH",
+    "LALPATHLAB", "LICHSGFIN", "LICI", "LODHA", "LT", "LTTS",
     "LUPIN", "M&M", "M&MFIN", "MANAPPURAM", "MANKIND", "MARICO", "MAZDOCK",
     "MCX", "METROPOLIS", "MFSL", "MGL", "MOTHERSON", "MPHASIS", "MUTHOOTFIN",
     "NATIONALUM", "NAVINFLUOR", "NBCC", "NESTLEIND", "NHPC", "NMDC", "NTPC",
@@ -44,7 +45,7 @@ WATCHLIST = [
     "TATACOMM", "TATACONSUM", "TATAELXSI", "TATAPOWER", "TATASTEEL",
     "TATATECH", "TECHM", "TITAGARH", "TORNTPHARM", "TORNTPOWER", "TRENT",
     "TVSMOTOR", "UBL", "ULTRACEMCO", "UNITDSPR", "UNOMINDA", "UPL", "VBL",
-    "VEDL", "VOLTAS", "WAAREEENER", "YESBANK", "ZEEL", "ETERNAL"
+    "VEDL", "VOLTAS", "WAAREEENER", "YESBANK", "ZEEL"
 ]
 
 class LTPTracker:
@@ -58,36 +59,14 @@ class LTPTracker:
         self.request_timeout = int(os.environ.get("NSE_TIMEOUT_SECONDS", "15") or 15)
 
     def get_fno_symbols(self, nse):
-        """Return FnO symbols from WATCHLIST using daily cache."""
-        cache_today = date.today().isoformat()
-
-        try:
-            with open(self.fno_cache_file, "r") as f:
-                cache = json.load(f)
-            if cache.get("date") == cache_today and isinstance(cache.get("symbols"), list):
-                return cache["symbols"]
-        except (FileNotFoundError, json.JSONDecodeError):
-            pass
-
-        fno_symbols = []
-        for i, symbol in enumerate(WATCHLIST, start=1):
-            try:
-                meta = nse.equityMetaInfo(symbol)
-                if meta.get("isFNOSec"):
-                    fno_symbols.append(symbol)
-            except Exception:
-                continue
-
-            if self.is_ci and i % 20 == 0:
-                print(f"[CI] Checked FnO eligibility: {i}/{len(WATCHLIST)}", flush=True)
-
-        with open(self.fno_cache_file, "w") as f:
-            json.dump({"date": cache_today, "symbols": fno_symbols}, f, indent=2)
-
+        """Return static FnO symbols list (no API checks)."""
+        fno_symbols = FNO_WATCHLIST.copy()
+        
         if self.max_symbols > 0:
             fno_symbols = fno_symbols[: self.max_symbols]
             print(f"[INFO] LTP_MAX_SYMBOLS applied: {len(fno_symbols)} symbols", flush=True)
-
+        
+        print(f"[INFO] Using {len(fno_symbols)} pre-verified FnO symbols", flush=True)
         return fno_symbols
         
     def load_today_data(self):
@@ -189,7 +168,7 @@ class LTPTracker:
         if not prev_data:
             prev_data, prev_time = self.load_previous_ltp_from_csv()
         
-        for symbol in WATCHLIST:
+        for symbol in FNO_WATCHLIST:
             if symbol not in ltp_data:
                 continue
             

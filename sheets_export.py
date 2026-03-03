@@ -19,64 +19,127 @@ def _to_float(value):
 
 
 def apply_gainer_loser_colors(worksheet, data):
-    """Color rows green for gainers and red for losers using change/ltp_change column."""
+    """Apply conditional formatting to change columns (green for gainers, red for losers)."""
     if len(data) <= 1:
         return
 
     headers = [str(h).strip().lower() for h in data[0]]
-    col_name = None
-    for candidate in ("change", "ltp_change"):
-        if candidate in headers:
-            col_name = candidate
-            break
-
-    if not col_name:
-        print("[INFO] No change column found. Skipping gainer/loser colors.")
-        return
-
-    change_col_index = headers.index(col_name)
-    total_cols = len(data[0])
+    sheet_id = worksheet.id
     requests = []
 
-    for row_idx, row in enumerate(data[1:], start=1):
-        if change_col_index >= len(row):
-            continue
+    # 1. Format header row - Blue background with white bold text
+    requests.append({
+        "repeatCell": {
+            "range": {
+                "sheetId": sheet_id,
+                "startRowIndex": 0,
+                "endRowIndex": 1
+            },
+            "cell": {
+                "userEnteredFormat": {
+                    "backgroundColor": {"red": 0.29, "green": 0.53, "blue": 0.91},
+                    "textFormat": {"foregroundColor": {"red": 1.0, "green": 1.0, "blue": 1.0}, "bold": True},
+                    "horizontalAlignment": "CENTER"
+                }
+            },
+            "fields": "userEnteredFormat(backgroundColor,textFormat,horizontalAlignment)"
+        }
+    })
 
-        change_value = _to_float(row[change_col_index])
-        if change_value is None or change_value == 0:
-            continue
+    # 2. Find change and change_pct columns
+    change_col_idx = None
+    change_pct_col_idx = None
 
-        if change_value > 0:
-            bg = {"red": 0.90, "green": 0.98, "blue": 0.90}
-            fg = {"red": 0.10, "green": 0.50, "blue": 0.10}
-        else:
-            bg = {"red": 0.99, "green": 0.90, "blue": 0.90}
-            fg = {"red": 0.65, "green": 0.10, "blue": 0.10}
+    for candidate in ("change", "ltp_change"):
+        if candidate in headers:
+            change_col_idx = headers.index(candidate)
+            break
 
+    for candidate in ("change_pct", "change %", "ltp_change_pct"):
+        if candidate in headers:
+            change_pct_col_idx = headers.index(candidate)
+            break
+
+    if change_col_idx is None and change_pct_col_idx is None:
+        print("[INFO] No change columns found. Skipping conditional formatting.")
+        return
+
+    # 3. Apply conditional formatting to change column (if exists)
+    if change_col_idx is not None:
+        # Green for positive values
         requests.append({
-            "repeatCell": {
-                "range": {
-                    "sheetId": worksheet.id,
-                    "startRowIndex": row_idx,
-                    "endRowIndex": row_idx + 1,
-                    "startColumnIndex": 0,
-                    "endColumnIndex": total_cols,
-                },
-                "cell": {
-                    "userEnteredFormat": {
-                        "backgroundColor": bg,
-                        "textFormat": {"foregroundColor": fg, "bold": True}
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 1000, 
+                                "startColumnIndex": change_col_idx, "endColumnIndex": change_col_idx + 1}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "0"}]},
+                        "format": {"backgroundColor": {"red": 0.85, "green": 0.92, "blue": 0.83},
+                                   "textFormat": {"foregroundColor": {"red": 0.10, "green": 0.50, "blue": 0.10}, "bold": True}}
                     }
                 },
-                "fields": "userEnteredFormat(backgroundColor,textFormat.foregroundColor,textFormat.bold)",
+                "index": 0
+            }
+        })
+
+        # Red for negative values
+        requests.append({
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 1000,
+                                "startColumnIndex": change_col_idx, "endColumnIndex": change_col_idx + 1}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "0"}]},
+                        "format": {"backgroundColor": {"red": 0.96, "green": 0.8, "blue": 0.8},
+                                   "textFormat": {"foregroundColor": {"red": 0.65, "green": 0.10, "blue": 0.10}, "bold": True}}
+                    }
+                },
+                "index": 1
+            }
+        })
+
+    # 4. Apply conditional formatting to change_pct column (if exists)
+    if change_pct_col_idx is not None:
+        # Green for positive percentage
+        requests.append({
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 1000,
+                                "startColumnIndex": change_pct_col_idx, "endColumnIndex": change_pct_col_idx + 1}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "0"}]},
+                        "format": {"backgroundColor": {"red": 0.85, "green": 0.92, "blue": 0.83},
+                                   "textFormat": {"foregroundColor": {"red": 0.10, "green": 0.50, "blue": 0.10}, "bold": True}}
+                    }
+                },
+                "index": 2
+            }
+        })
+
+        # Red for negative percentage
+        requests.append({
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "endRowIndex": 1000,
+                                "startColumnIndex": change_pct_col_idx, "endColumnIndex": change_pct_col_idx + 1}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "0"}]},
+                        "format": {"backgroundColor": {"red": 0.96, "green": 0.8, "blue": 0.8},
+                                   "textFormat": {"foregroundColor": {"red": 0.65, "green": 0.10, "blue": 0.10}, "bold": True}}
+                    }
+                },
+                "index": 3
             }
         })
 
     if requests:
-        worksheet.spreadsheet.batch_update({"requests": requests})
-        print(f"[SUCCESS] Applied gainer/loser colors to {len(requests)} rows.")
+        try:
+            worksheet.spreadsheet.batch_update({"requests": requests})
+            print(f"[SUCCESS] Applied header formatting and gainer/loser colors to change columns.")
+        except Exception as e:
+            print(f"[WARNING] Could not apply formatting: {e}")
     else:
-        print("[INFO] No positive/negative changes found to color.")
+        print("[INFO] No formatting rules to apply.")
 
 def export_to_sheets(csv_file, spreadsheet_id, custom_name=None):
     # 1. Authenticate
