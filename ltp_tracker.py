@@ -104,6 +104,30 @@ class LTPTracker:
         with open(self.data_file, 'w') as f:
             json.dump(self.today_data, f, indent=2)
     
+    def load_previous_ltp_from_csv(self):
+        """Load most recent LTP per symbol from cumulative CSV."""
+        if not Path(self.csv_file).exists():
+            return {}, None
+        
+        previous_ltp = {}
+        last_time = None
+        
+        with open(self.csv_file, 'r', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                symbol = row.get('symbol')
+                ltp_str = row.get('ltp')
+                time_str = row.get('time')
+                
+                if symbol and ltp_str:
+                    try:
+                        previous_ltp[symbol] = float(ltp_str)
+                        last_time = time_str
+                    except ValueError:
+                        continue
+        
+        return previous_ltp, last_time
+    
     def fetch_ltp_for_stocks(self):
         """Fetch current LTP for all stocks"""
         ltp_data = {}
@@ -160,6 +184,10 @@ class LTPTracker:
         previous_run_times = [t for t in sorted(self.today_data.keys()) if t < current_time]
         prev_time = previous_run_times[-1] if previous_run_times else None
         prev_data = self.today_data.get(prev_time, {}).get('stocks', {}) if prev_time else {}
+        
+        # If no same-day previous data, load from cumulative CSV
+        if not prev_data:
+            prev_data, prev_time = self.load_previous_ltp_from_csv()
         
         for symbol in WATCHLIST:
             if symbol not in ltp_data:
