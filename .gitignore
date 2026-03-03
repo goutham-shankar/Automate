@@ -11,7 +11,6 @@ env/
 *.pkl
 opt-expiry.json
 *.csv
-!ONE_BY_ONE_FETCH_Export.csv
 *.zip
 ltp_tracker_data.json
 ltp_fno_symbols.json
