@@ -9,43 +9,50 @@ import os
 sys.path.append(str(Path(__file__).parent / "src"))
 from nse import NSE
 
-# FnO-eligible stock watchlist (static, verified as of March 2026)
-# Update this list manually if FnO eligibility changes
+# Custom stock watchlist (user-defined)
 FNO_WATCHLIST = [
-    "360ONE", "ABB", "ABBOTINDIA", "ABCAPITAL", "ABFRL", "ALKEM", "AMBER",
-    "ANGELONE", "APLAPOLLO", "APOLLOHOSP", "APOLLOTYRE", "ASHOKLEY",
-    "ASTRAL", "ATGL", "AUBANK", "AUROPHARMA", "BAJAJ-AUTO", "BAJAJFINSV",
-    "BAJAJHLDNG", "BAJFINANCE", "BALKRISIND", "BALRAMCHIN", "BANDHANBNK",
-    "BANKBARODA", "BANKINDIA", "BDL", "BERGEPAINT", "BHARATFORG",
-    "BHARTIARTL", "BIOCON", "BLUESTARCO", "BOSCHLTD", "BPCL", "BRITANNIA",
-    "BSE", "CAMS", "CANBK", "CANFINHOME", "CDSL", "CESC",
-    "CGPOWER", "CHAMBLFERT", "CHOLAFIN", "CIPLA", "COALINDIA", "COFORGE",
-    "COLPAL", "CONCOR", "COROMANDEL", "CROMPTON", "CUMMINSIND", "DABUR",
-    "DALBHARAT", "DEEPAKNTR", "DELHIVERY", "DIVISLAB", "DIXON", "DLF",
-    "DMART", "DRREDDY", "EICHERMOT", "ESCORTS", "ETERNAL", "EXIDEIND",
-    "FEDERALBNK", "FORTIS", "GAIL", "GLENMARK", "GODREJCP",
-    "GODREJPROP", "GRASIM", "GUJGASLTD", "HAL", "HAVELLS", "HCLTECH",
-    "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDCOPPER", "HINDPETRO",
-    "HINDUNILVR", "HINDZINC", "HUDCO", "ICICIGI", "ICICIPRULI", "IDFC",
-    "IDFCFIRSTB", "IEX", "IGL", "IIFL", "INDHOTEL", "INDIACEM", "INDIAMART",
-    "INDIGO", "INDUSINDBK", "INDUSTOWER", "INOXWIND", "IOC", "IPCALAB",
-    "IREDA", "IRFC", "JINDALSTEL", "JIOFIN", "JKCEMENT", "JSWENERGY",
-    "JSWSTEEL", "JUBLFOOD", "KAYNES", "KFINTECH",
-    "LALPATHLAB", "LICHSGFIN", "LICI", "LODHA", "LT", "LTTS",
-    "LUPIN", "M&M", "M&MFIN", "MANAPPURAM", "MANKIND", "MARICO", "MAZDOCK",
-    "MCX", "METROPOLIS", "MFSL", "MGL", "MOTHERSON", "MPHASIS", "MUTHOOTFIN",
-    "NATIONALUM", "NAVINFLUOR", "NBCC", "NESTLEIND", "NHPC", "NMDC", "NTPC",
-    "NUVAMA", "OBEROIRLTY", "OFSS", "ONGC", "PAGEIND", "PATANJALI", "PEL",
-    "PERSISTENT", "PETRONET", "PFC", "PGEL", "PGHH", "PHOENIXLTD",
-    "PIDILITIND", "PIIND", "PNB", "PNBHOUSING", "POLYCAB", "POWERGRID",
-    "POWERINDIA", "PPLPHARMA", "PREMIERENE", "PVRINOX", "RAMCOCEM",
-    "RBLBANK", "RECLTD", "RVNL", "SAIL", "SAMMAANCAP", "SBICARD", "SBILIFE",
-    "SBIN", "SHREECEM", "SHRIRAMFIN", "SIEMENS", "SOLARINDS", "SRF",
-    "SUNPHARMA", "SUNTV", "SUZLON", "SWIGGY", "SYNGENE", "TATACHEM",
-    "TATACOMM", "TATACONSUM", "TATAELXSI", "TATAPOWER", "TATASTEEL",
-    "TATATECH", "TECHM", "TITAGARH", "TORNTPHARM", "TORNTPOWER", "TRENT",
-    "TVSMOTOR", "UBL", "ULTRACEMCO", "UNITDSPR", "UNOMINDA", "UPL", "VBL",
-    "VEDL", "VOLTAS", "WAAREEENER", "YESBANK", "ZEEL"
+    "360ONE", "BAJAJ-AUTO", "BRITANNIA", "DMART", "GMRAIRPORT",
+    "HINDALCO", "ABB", "ASHOKLEY", "BDL", "CHOLAFIN",
+    "ITC", "KALYANKJIL", "LUPIN", "NBCC", "NTPC",
+    "ADANIGREEN", "EXIDEIND", "HDFCBANK", "HINDUNILVR", "INDHOTEL",
+    "INDUSTOWER", "KEI", "PREMIERENE", "BHEL", "CONCOR",
+    "INFY", "SHRIRAMFIN", "TATACONSUM", "MPHASIS", "PAGEIND",
+    "LICHSGFIN", "SBILIFE", "ONGC", "PIIND", "SAIL",
+    "TATAPOWER", "WAAREEENER", "SUZLON", "ULTRACEMCO", "UPL",
+    "ALKEM", "ZYDUSLIFE", "BIOCON", "COFORGE", "GAIL",
+    "IEX", "LAURUSLABS", "MAXHEALTH", "PFC", "POWERINDIA",
+    "SOLARINDS", "TRENT", "ADANIENSOL", "BANDHANBNK", "COLPAL",
+    "EICHERMOT", "GODREJCP", "HUDCO", "ADANIPORTS", "ASIANPAINT",
+    "BLUESTARCO", "CROMPTON", "JINDALSTEL", "KAYNES", "MANAPPURAM",
+    "NESTLEIND", "NUVAMA", "AMBUJACEM", "GLENMARK", "HDFCLIFE",
+    "HINDZINC", "INDIANB", "IREDA", "PETRONET", "SBICARD",
+    "BOSCHLTD", "DELHIVERY", "IOC", "SIEMENS", "TECHM",
+    "NATIONALUM", "PATANJALI", "LODHA", "SHREECEM", "PERSISTENT",
+    "PPLPHARMA", "SONACOMS", "TCS", "WIPRO", "SWIGGY",
+    "UNIONBANK", "VBL", "AMBER", "BEL", "CGPOWER",
+    "DIVISLAB", "GRASIM", "KFINTECH", "LT", "MCX",
+    "PNB", "PRESTIGE", "TATASTEEL", "TVSMOTOR", "APOLLOHOSP",
+    "BANKBARODA", "DABUR", "FEDERALBNK", "GODREJPROP", "ICICIBANK",
+    "ANGELONE", "AUBANK", "CAMS", "CUMMINSIND", "JSWENERGY",
+    "LICI", "MARICO", "NHPC", "OFSS", "ASTRAL",
+    "HAL", "HEROMOTOCO", "ICICIGI", "INDIGO", "IRFC",
+    "PHOENIXLTD", "SBIN", "BSE", "DRREDDY", "JSWSTEEL",
+    "SUNPHARMA", "TMPV", "NAUKRI", "POLYCAB", "M&M",
+    "MFSL", "PGEL", "RELIANCE", "SYNGENE", "TITAN",
+    "YESBANK", "TATATECH", "MCDOWELL-N", "VOLTAS", "AXISBANK",
+    "BHARATFORG", "CIPLA", "DIXON", "HCLTECH", "KOTAKBANK",
+    "LTIM", "OIL", "POLICYBKR", "RBLBANK", "TIINDIA",
+    "AUROPHARMA", "BPCL", "DALBHARAT", "FORTIS", "HAVELLS",
+    "IDEA", "APLAPOLLO", "BAJFINANCE", "CANBK", "INOXWIND",
+    "JUBLFOOD", "LTF", "MUTHOOTFIN", "NMDC", "ABCAPITAL",
+    "BAJAJHLDNG", "HDFCAMC", "HINDPETRO", "IDFCFIRSTB", "INDUSINDBK",
+    "JIOFIN", "PNBHOUSING", "BANKINDIA", "CDSL", "ETERNAL",
+    "MANKIND", "SUPREMEIND", "MOTHERSON", "OBEROIRLTY", "RECLTD",
+    "MAZDOCK", "NYKAA", "PIDILITIND", "RVNL", "TATAELXSI",
+    "VEDL", "SRF", "TORNTPOWER", "UNOMINDA", "ADANIENT",
+    "BAJAJFINSV", "BHARTIARTL", "COALINDIA", "DLF", "ICICIPRULI",
+    "KPITTECH", "MARUTI", "PAYTM", "POWERGRID", "SAMMAANCAP",
+    "TORNTPHARM"
 ]
 
 class LTPTracker:
@@ -59,15 +66,34 @@ class LTPTracker:
         self.request_timeout = int(os.environ.get("NSE_TIMEOUT_SECONDS", "15") or 15)
 
     def get_fno_symbols(self, nse):
-        """Return static FnO symbols list (no API checks)."""
-        fno_symbols = FNO_WATCHLIST.copy()
-        
-        if self.max_symbols > 0:
-            fno_symbols = fno_symbols[: self.max_symbols]
-            print(f"[INFO] LTP_MAX_SYMBOLS applied: {len(fno_symbols)} symbols", flush=True)
-        
-        print(f"[INFO] Using {len(fno_symbols)} pre-verified FnO symbols", flush=True)
-        return fno_symbols
+        """Get live FnO symbols from NSE API."""
+        try:
+            print("[INFO] Fetching live FnO stocks from NSE...", flush=True)
+            response = nse.listEquityStocksByIndex(index='SECURITIES IN F&O')
+            data = response.get('data', [])
+            fno_symbols = [stock['symbol'] for stock in data if stock.get('symbol')]
+            
+            if not fno_symbols:
+                print("[WARNING] No FnO stocks found, falling back to static list", flush=True)
+                fno_symbols = FNO_WATCHLIST.copy()
+            else:
+                print(f"[OK] Fetched {len(fno_symbols)} FnO stocks from NSE", flush=True)
+            
+            if self.max_symbols > 0:
+                fno_symbols = fno_symbols[: self.max_symbols]
+                print(f"[INFO] LTP_MAX_SYMBOLS applied: {len(fno_symbols)} symbols", flush=True)
+            
+            return fno_symbols
+            
+        except Exception as e:
+            print(f"[ERROR] Failed to fetch FnO list from NSE: {e}", flush=True)
+            print("[INFO] Falling back to static FnO list", flush=True)
+            fno_symbols = FNO_WATCHLIST.copy()
+            
+            if self.max_symbols > 0:
+                fno_symbols = fno_symbols[: self.max_symbols]
+            
+            return fno_symbols
         
     def load_today_data(self):
         """Load existing data for today"""
@@ -211,11 +237,25 @@ class LTPTracker:
             for i, symbol in enumerate(fno_watchlist):
                 try:
                     quote = nse.quote(symbol, type="equity")
-                    ltp_raw = quote.get("priceInfo", {}).get("lastPrice")
+                    price_info = quote.get("priceInfo", {})
+                    
+                    ltp_raw = price_info.get("lastPrice")
                     if ltp_raw is None:
                         raise ValueError("Missing lastPrice in quote response")
                     ltp = float(str(ltp_raw).replace(",", ""))
-                    ltp_data[symbol] = ltp
+                    
+                    # Get open and previous close for day's change
+                    open_raw = price_info.get("open", 0)
+                    prev_close_raw = price_info.get("previousClose", 0)
+                    open_price = float(str(open_raw).replace(",", "")) if open_raw else None
+                    prev_close = float(str(prev_close_raw).replace(",", "")) if prev_close_raw else None
+                    
+                    ltp_data[symbol] = {
+                        'ltp': ltp,
+                        'open': open_price,
+                        'prev_close': prev_close
+                    }
+                    
                     if self.is_ci:
                         if (i + 1) % 10 == 0 or (i + 1) == len(fno_watchlist):
                             print(f"[CI] Fetched LTP: {i+1}/{len(fno_watchlist)}", flush=True)
@@ -238,7 +278,8 @@ class LTPTracker:
                 'stocks': {}
             }
         
-        self.today_data[current_time]['stocks'] = ltp_data
+        # Store only LTP values for comparison (open/prev_close not needed in history)
+        self.today_data[current_time]['stocks'] = {symbol: data['ltp'] for symbol, data in ltp_data.items()}
         self.save_today_data()
         
         # Display current prices
@@ -264,39 +305,56 @@ class LTPTracker:
             if symbol not in ltp_data:
                 continue
             
-            current_ltp = ltp_data[symbol]
+            stock_data = ltp_data[symbol]
+            current_ltp = stock_data['ltp']
+            open_price = stock_data['open']
+            prev_close = stock_data['prev_close']
+            
             change = None
             change_pct = None
+            day_change = None
+            day_change_pct = None
+            
+            # Calculate day's change (from open)
+            if open_price and open_price != 0:
+                day_change = current_ltp - open_price
+                day_change_pct = (day_change / open_price * 100)
+            
+            # Determine day status
+            day_status = ""
+            if day_change_pct is not None:
+                if day_change_pct >= 1.0:
+                    day_status = "Gainer"
+                elif day_change_pct <= -1.0:
+                    day_status = "Loser"
+                else:
+                    day_status = "Neutral"
             
             # Build comparison info
             comparison_info = f"{symbol} {current_ltp}"
             
-            # Find previous runs and calculate changes
+            # Show day's change
+            if day_change is not None:
+                comparison_info += f" | Day's change: {day_change:+.2f} ({day_change_pct:+.2f}%)"
+            
+            # Find previous runs and calculate interval changes
             if prev_time and symbol in prev_data:
                 prev_ltp = prev_data[symbol]
                 change = current_ltp - prev_ltp
                 change_pct = (change / prev_ltp * 100) if prev_ltp != 0 else 0
 
-                comparison_info += f" | Change vs {prev_time}: {change:+.2f} ({change_pct:+.2f}%)"
-                    
-                    # Find first run of the day
-                first_run_times = sorted(self.today_data.keys())
-                if first_run_times:
-                    first_time = first_run_times[0]
-                    first_data = self.today_data[first_time]['stocks']
-
-                    if symbol in first_data and first_time != current_time:
-                        first_ltp = first_data[symbol]
-                        total_change = current_ltp - first_ltp
-                        total_change_pct = (total_change / first_ltp * 100) if first_ltp != 0 else 0
-
-                        comparison_info += f" | Total from {first_time}: {total_change:+.2f} ({total_change_pct:+.2f}%)"
+                comparison_info += f" | vs {prev_time}: {change:+.2f} ({change_pct:+.2f}%)"
             
             print(comparison_info)
             results.append({
                 'time': current_time,
                 'symbol': symbol,
                 'ltp': current_ltp,
+                'open': open_price if open_price else "",
+                'prev_close': prev_close if prev_close else "",
+                'day_change': "" if day_change is None else round(day_change, 4),
+                'day_change_pct': "" if day_change_pct is None else round(day_change_pct, 4),
+                'day_status': day_status,
                 'timestamp': timestamp,
                 'previous_time': prev_time or "",
                 'change': "" if change is None else round(change, 4),
@@ -306,14 +364,68 @@ class LTPTracker:
         # Save to CSV
         self.save_to_csv(results)
         print(f"\n[SAVED] Data saved to {self.csv_file}")
+        
+        # Display day's movers summary
+        self.display_day_movers_summary(results)
 
         return results, timestamp
+    
+    def display_day_movers_summary(self, results):
+        """Display stocks that moved >= 1% from today's open"""
+        print(f"\n{'='*100}")
+        print(f"DAY'S MOVERS SUMMARY (Change from Open >= ±1%)")
+        print(f"{'='*100}")
+        
+        # Filter stocks with day_change_pct data
+        stocks_with_day_change = [r for r in results if r.get('day_change_pct') != ""]
+        
+        if not stocks_with_day_change:
+            print("[INFO] No day's change data available yet (market not opened or no open prices)")
+            return
+        
+        # Find losers (down >= 1%)
+        losers = [r for r in stocks_with_day_change if r['day_change_pct'] <= -1.0]
+        losers.sort(key=lambda x: x['day_change_pct'])
+        
+        # Find gainers (up >= 1%)
+        gainers = [r for r in stocks_with_day_change if r['day_change_pct'] >= 1.0]
+        gainers.sort(key=lambda x: x['day_change_pct'], reverse=True)
+        
+        print(f"\n🔴 LOSERS (Down >= 1%): {len(losers)} stocks")
+        print(f"{'-'*100}")
+        if losers:
+            print(f"{'Symbol':<15} {'LTP':<10} {'Open':<10} {'Change':<10} {'Change %':<10}")
+            print(f"{'-'*100}")
+            for stock in losers[:20]:  # Show top 20
+                print(f"{stock['symbol']:<15} {stock['ltp']:<10.2f} {stock['open']:<10.2f} "
+                      f"{stock['day_change']:<10.2f} {stock['day_change_pct']:<10.2f}%")
+            if len(losers) > 20:
+                print(f"... and {len(losers) - 20} more")
+        else:
+            print("None")
+        
+        print(f"\n🟢 GAINERS (Up >= 1%): {len(gainers)} stocks")
+        print(f"{'-'*100}")
+        if gainers:
+            print(f"{'Symbol':<15} {'LTP':<10} {'Open':<10} {'Change':<10} {'Change %':<10}")
+            print(f"{'-'*100}")
+            for stock in gainers[:20]:  # Show top 20
+                print(f"{stock['symbol']:<15} {stock['ltp']:<10.2f} {stock['open']:<10.2f} "
+                      f"{stock['day_change']:<10.2f} {stock['day_change_pct']:<10.2f}%")
+            if len(gainers) > 20:
+                print(f"... and {len(gainers) - 20} more")
+        else:
+            print("None")
+        
+        print(f"\n{'='*100}")
+
 
     def save_run_csv(self, results, run_label):
         """Save only current run data to a dedicated CSV file."""
         run_file = f"LTP_RUN_{date.today().strftime('%Y%m%d')}_{run_label.replace(':', '')}.csv"
         with open(run_file, 'w', newline='') as f:
-            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'change', 'change_pct']
+            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'open', 'prev_close', 
+                         'day_change', 'day_change_pct', 'day_status', 'change', 'change_pct']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for row in results:
@@ -342,7 +454,8 @@ class LTPTracker:
         file_exists = Path(self.csv_file).exists()
         
         with open(self.csv_file, 'a', newline='') as f:
-            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'change', 'change_pct']
+            fieldnames = ['timestamp', 'time', 'previous_time', 'symbol', 'ltp', 'open', 'prev_close',
+                         'day_change', 'day_change_pct', 'day_status', 'change', 'change_pct']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             
             if not file_exists:
